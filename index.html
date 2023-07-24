@@ -1,0 +1,69 @@
+//NEED TO REJOIN ARRAY OF STRINGS, ALSO SUPPORT FOR HREF="", SRC="", & ALT=""
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Read Text File</title>
+  </head>
+  <body>
+    <input type="file" name="inputfile" id="inputfile" />
+    <br />
+
+    <pre id="output"></pre>
+
+    <script type="text/javascript">
+      document
+        .getElementById("inputfile")
+        .addEventListener("change", function () {
+          var fr = new FileReader();
+          fr.onload = function () {
+            let page = fr.result;
+            let lines = page.split(/\r?\n|\r|\n/g);
+            let inputRegEx =
+              /<h1\b[^>]*>|<h2\b[^>]*>|<h3\b[^>]*>|<h4\b[^>]*>|<h5\b[^>]*>|<h6\b[^>]*>|<p\b[^>]*>|<em\b[^>]*>|<a\b[^>]*>|<strong\b[^>]*>|<b\b[^>]*>|<li\b[^>]*>|<button\b[^>]*>|<span\b[^>]*>/g;
+
+            // Need closing src, alt, and both open and closing href
+            let closingBraceRegex =
+              /<\/h1>|<\/h2>|<\/h3>|<\/h4>|<\/h5>|<\/h6>|<\/p>|<\/em>|<\/a>|<\/strong>|<\/b>|<\/li>|<\/button>|<\/span>/g;
+            let srcAltRegex = /src="[^"]*"|alt="[^"]*"/g;
+            let hrefRegex = /href="[^"]*"/g;
+
+            let openBracesArr = lines.map((line) => {
+              function replacer(match) {
+                return match.padEnd(match.length + 3, "{{ ");
+              }
+              return line.replaceAll(inputRegEx, replacer);
+            });
+            let bothBracesArr = openBracesArr.map((line) => {
+              function closingReplacer(match) {
+                return match.padStart(match.length + 3, " }}");
+              }
+              return line.replaceAll(closingBraceRegex, closingReplacer);
+            });
+            let srcAltBraces = bothBracesArr.map((line) => {
+              function saReplacer(match) {
+                let chars = match.split("");
+                let openBraces = chars.toSpliced(5, 0, "{{ ");
+                let closeBraces = openBraces.toSpliced(-1, 0, " }}");
+                return closeBraces.join("");
+              }
+              return line.replaceAll(srcAltRegex, saReplacer);
+            });
+            let hrefBraces = srcAltBraces.map((line) => {
+              function hrefReplacer(match) {
+                let chars = match.split("");
+                let openBraces = chars.toSpliced(6, 0, "{{ ");
+                let closeBraces = openBraces.toSpliced(-1, 0, " }}");
+                return closeBraces.join("");
+              }
+              return line.replaceAll(hrefRegex, hrefReplacer);
+            });
+            finished = hrefBraces.join("\n");
+            console.log(finished);
+          };
+
+          fr.readAsText(this.files[0]);
+        });
+    </script>
+  </body>
+</html>
